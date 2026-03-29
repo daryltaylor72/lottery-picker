@@ -440,6 +440,20 @@
       opacity: 0.6;
     }
 
+    /* ── Session counter ── */
+    .session-counter {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      margin-top: 32px;
+      margin-bottom: 0;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .session-counter.visible { opacity: 1; }
+
     /* ── Empty state ── */
     .empty-state {
       text-align: center;
@@ -578,6 +592,8 @@
     Fill in your details and tap Generate
   </div>
 </div>
+
+<div class="session-counter" id="session-counter"></div>
 
 <footer>Your numbers are yours — play responsibly.</footer>
 
@@ -879,6 +895,19 @@ document.getElementById('btn-generate').addEventListener('click', function() {
 
   genCount++;
   document.getElementById('gen-count').textContent = `Generation #${genCount}`;
+
+  // Update session counter
+  const counterEl = document.getElementById('session-counter');
+  counterEl.textContent = `★ You've generated ${genCount} set${genCount === 1 ? '' : 's'} this session`;
+  counterEl.classList.add('visible');
+
+  // Track analytics (silent fail)
+  const selectedPlayType = (document.querySelector('input[name="play-type"]:checked') || {}).value || null;
+  fetch('https://lottery-analytics.wb6yppthkw.workers.dev/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ game: lotteryKey, state: currentState, playType: selectedPlayType })
+  }).catch(() => {});
 
   for (let i = 1; i <= 3; i++) {
     const setSeed = buildSeed(name, dates, favorites, salt + i * 777);
