@@ -195,6 +195,108 @@
     }
     .btn-add-date:hover { background: var(--gold-pale); }
 
+    /* ── State Toggle (iOS pill style) ── */
+    .state-toggle {
+      display: flex;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .state-toggle button {
+      flex: 1;
+      padding: 9px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      letter-spacing: 0.04em;
+    }
+
+    .state-toggle button.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+    }
+
+    .state-toggle button:hover:not(.active) {
+      background: rgba(255,255,255,0.6);
+      color: var(--ink);
+    }
+
+    /* ── Play Type Cards ── */
+    .play-type-section {
+      margin-bottom: 20px;
+      animation: fadeIn 0.2s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .play-type-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .play-type-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 11px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--cream);
+    }
+
+    .play-type-card:hover {
+      border-color: var(--gold-light);
+      background: var(--gold-pale);
+    }
+
+    .play-type-card.selected {
+      border-color: var(--gold);
+      background: var(--gold-pale);
+    }
+
+    .play-type-card input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    .play-type-info {
+      flex: 1;
+    }
+
+    .play-type-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .play-type-desc {
+      font-size: 0.76rem;
+      font-weight: 300;
+      color: var(--ink-soft);
+      line-height: 1.4;
+    }
+
     /* ── Generate Button ── */
     .btn-generate {
       width: 100%;
@@ -293,6 +395,7 @@
     .ball.pick3  { background: linear-gradient(135deg, #5CB85C 0%, #2E7B2E 100%); }
     .ball.pick4  { background: linear-gradient(135deg, #9B59B6 0%, #6C2A8A 100%); }
     .ball.pick5  { background: linear-gradient(135deg, #E67E22 0%, #A04B00 100%); }
+    .ball.cash5  { background: linear-gradient(135deg, #E67E22 0%, #A04B00 100%); }
     .ball.gold   { background: linear-gradient(135deg, #C9A84C 0%, #8C6B1A 100%); }
 
     /* Ball stagger */
@@ -308,6 +411,23 @@
       color: var(--border);
       align-self: center;
       margin: 0 2px;
+    }
+
+    /* ── Smart Recommendation Callout ── */
+    .recommendation {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #FBF3DE 0%, #F7ECCC 100%);
+      border: 1px solid var(--gold-light);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--ink);
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease 0.4s both;
+    }
+
+    .recommendation strong {
+      color: #8C6B1A;
     }
 
     /* ── Footer ── */
@@ -345,6 +465,9 @@
       margin-top: 12px;
       letter-spacing: 0.05em;
     }
+
+    /* Hidden utility */
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -380,6 +503,15 @@
   </div>
 
   <div class="form-group">
+    <label>State</label>
+    <div class="state-toggle" id="state-toggle">
+      <button data-state="national" class="active">National</button>
+      <button data-state="nc">NC</button>
+      <button data-state="sc">SC</button>
+    </div>
+  </div>
+
+  <div class="form-group">
     <label>Lottery Game</label>
     <div class="select-wrap">
       <select id="lottery-type">
@@ -389,6 +521,48 @@
         <option value="pick4">Pick 4 (4 digits 0–9)</option>
         <option value="pick5">Pick 5 (5 of 1–39)</option>
       </select>
+    </div>
+  </div>
+
+  <!-- Play Type section (shown for Pick 3 / Pick 4 in NC or SC) -->
+  <div class="form-group play-type-section hidden" id="play-type-section">
+    <label>Play Type</label>
+    <div class="play-type-grid" id="play-type-grid">
+      <label class="play-type-card selected" for="pt-exact">
+        <input type="radio" name="play-type" id="pt-exact" value="exact" checked>
+        <div class="play-type-info">
+          <div class="play-type-name">Exact Order</div>
+          <div class="play-type-desc">Must match exact sequence. Highest payout.</div>
+        </div>
+      </label>
+      <label class="play-type-card" for="pt-any">
+        <input type="radio" name="play-type" id="pt-any" value="any">
+        <div class="play-type-info">
+          <div class="play-type-name">Any Order</div>
+          <div class="play-type-desc">Wins if digits match in any order. Better odds.</div>
+        </div>
+      </label>
+      <label class="play-type-card" for="pt-5050">
+        <input type="radio" name="play-type" id="pt-5050" value="5050">
+        <div class="play-type-info">
+          <div class="play-type-name">50/50 (Exact / Any)</div>
+          <div class="play-type-desc">Half bet on exact, half on any. Balanced.</div>
+        </div>
+      </label>
+      <label class="play-type-card" for="pt-combo">
+        <input type="radio" name="play-type" id="pt-combo" value="combo">
+        <div class="play-type-info">
+          <div class="play-type-name">Combo</div>
+          <div class="play-type-desc">Covers all possible exact order combinations. Costs more, best coverage.</div>
+        </div>
+      </label>
+      <label class="play-type-card" for="pt-pairs">
+        <input type="radio" name="play-type" id="pt-pairs" value="pairs">
+        <div class="play-type-info">
+          <div class="play-type-name">Pairs</div>
+          <div class="play-type-desc">Match first 2 or last 2 digits exactly.</div>
+        </div>
+      </label>
     </div>
   </div>
 
@@ -458,22 +632,44 @@ function pickDigits(rng, count) {
   return digits;
 }
 
+// ── Game definitions by state ─────────────────────────────────────────────
+const STATE_GAMES = {
+  national: [
+    { value: 'powerball',    label: 'Powerball (5 of 1–69 + 1 of 1–26)' },
+    { value: 'megamillions', label: 'Mega Millions (5 of 1–70 + 1 of 1–25)' },
+    { value: 'pick3',        label: 'Pick 3 (3 digits 0–9)' },
+    { value: 'pick4',        label: 'Pick 4 (4 digits 0–9)' },
+    { value: 'pick5',        label: 'Pick 5 (5 of 1–39)' },
+  ],
+  nc: [
+    { value: 'pick3',        label: 'Pick 3 (3 digits 0–9)' },
+    { value: 'pick4',        label: 'Pick 4 (4 digits 0–9)' },
+    { value: 'cash5',        label: 'Cash 5 (5 of 1–43)' },
+    { value: 'megamillions', label: 'Mega Millions (5 of 1–70 + 1 of 1–25)' },
+    { value: 'powerball',    label: 'Powerball (5 of 1–69 + 1 of 1–26)' },
+  ],
+  sc: [
+    { value: 'pick3',        label: 'Pick 3 (3 digits 0–9)' },
+    { value: 'pick4',        label: 'Pick 4 (4 digits 0–9)' },
+    { value: 'pick5sc',      label: 'Pick 5 (5 of 1–39)' },
+    { value: 'palmetto5',    label: 'Palmetto Cash 5 (5 of 1–38)' },
+    { value: 'megamillions', label: 'Mega Millions (5 of 1–70 + 1 of 1–25)' },
+    { value: 'powerball',    label: 'Powerball (5 of 1–69 + 1 of 1–26)' },
+  ],
+};
+
 // ── Lottery rules ─────────────────────────────────────────────────────────
 const LOTTERIES = {
   powerball: {
     label: 'Powerball',
     generate(rng) {
-      const whites = pickUnique(rng, 5, 1, 69);
-      const power  = pickUnique(rng, 1, 1, 26);
-      return { whites, bonus: power, type: 'powerball' };
+      return { whites: pickUnique(rng, 5, 1, 69), bonus: pickUnique(rng, 1, 1, 26), type: 'powerball' };
     }
   },
   megamillions: {
     label: 'Mega Millions',
     generate(rng) {
-      const whites = pickUnique(rng, 5, 1, 70);
-      const mega   = pickUnique(rng, 1, 1, 25);
-      return { whites, bonus: mega, type: 'megamillions' };
+      return { whites: pickUnique(rng, 5, 1, 70), bonus: pickUnique(rng, 1, 1, 25), type: 'megamillions' };
     }
   },
   pick3: {
@@ -491,14 +687,52 @@ const LOTTERIES = {
   pick5: {
     label: 'Pick 5',
     generate(rng) {
-      const nums = pickUnique(rng, 5, 1, 39);
-      return { whites: nums, type: 'pick5' };
+      return { whites: pickUnique(rng, 5, 1, 39), type: 'pick5' };
     }
-  }
+  },
+  cash5: {
+    label: 'Cash 5',
+    generate(rng) {
+      return { whites: pickUnique(rng, 5, 1, 43), type: 'cash5' };
+    }
+  },
+  pick5sc: {
+    label: 'Pick 5',
+    generate(rng) {
+      return { whites: pickUnique(rng, 5, 1, 39), type: 'pick5' };
+    }
+  },
+  palmetto5: {
+    label: 'Palmetto Cash 5',
+    generate(rng) {
+      return { whites: pickUnique(rng, 5, 1, 38), type: 'cash5' };
+    }
+  },
 };
 
+// ── Smart Recommendation for Pick 3 / Pick 4 ─────────────────────────────
+function getRecommendation(digits) {
+  const unique = new Set(digits).size;
+  if (unique === 1) {
+    // All same (e.g. 777)
+    return '💡 <strong>Recommended: Exact Order</strong> — all identical digits, max payout on exact match.';
+  }
+  // Count pairs
+  const freq = {};
+  digits.forEach(d => { freq[d] = (freq[d] || 0) + 1; });
+  const hasPair = Object.values(freq).some(v => v === 2);
+  if (hasPair && unique === digits.length - 1) {
+    // One pair (e.g. 223, 331)
+    const combos = digits.length === 3 ? 3 : 6;
+    return `💡 <strong>Recommended: Any Order</strong> — one repeated digit gives you ${combos} combinations at better odds.`;
+  }
+  // All different
+  const allDiffCombos = digits.length === 3 ? 6 : 24;
+  return `💡 <strong>Recommended: 50/50</strong> — all unique digits give you ${allDiffCombos} any-order combinations at half cost.`;
+}
+
 // ── Render a result block ─────────────────────────────────────────────────
-function renderResult(data, label) {
+function renderResult(data, label, showRecommendation) {
   const block = document.createElement('div');
   block.className = 'result-block';
 
@@ -522,8 +756,8 @@ function renderResult(data, label) {
       row.appendChild(ball);
     });
   } else {
-    // Powerball / Mega Millions / Pick 5
-    const whiteCls = data.type === 'pick5' ? 'pick5' : 'white';
+    // Powerball / Mega Millions / Pick 5 / Cash 5 / Palmetto
+    const whiteCls = (data.type === 'pick5' || data.type === 'cash5') ? data.type : 'white';
     data.whites.forEach((n, i) => {
       const ball = document.createElement('div');
       ball.className = `ball ${whiteCls}`;
@@ -548,8 +782,74 @@ function renderResult(data, label) {
   }
 
   block.appendChild(row);
+
+  // Smart recommendation for Pick 3 / Pick 4
+  if (data.digits && showRecommendation) {
+    const rec = document.createElement('div');
+    rec.className = 'recommendation';
+    rec.innerHTML = getRecommendation(data.digits);
+    block.appendChild(rec);
+  }
+
   return block;
 }
+
+// ── State & game dropdown management ──────────────────────────────────────
+let currentState = 'national';
+
+function updateGameDropdown(state) {
+  const select = document.getElementById('lottery-type');
+  const games = STATE_GAMES[state];
+  select.innerHTML = '';
+  games.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.value;
+    opt.textContent = g.label;
+    select.appendChild(opt);
+  });
+  updatePlayTypeVisibility();
+}
+
+function updatePlayTypeVisibility() {
+  const lotteryKey = document.getElementById('lottery-type').value;
+  const section = document.getElementById('play-type-section');
+  const isPickGame = (lotteryKey === 'pick3' || lotteryKey === 'pick4');
+  const isStateGame = (currentState === 'nc' || currentState === 'sc');
+
+  if (isPickGame && isStateGame) {
+    section.classList.remove('hidden');
+  } else {
+    section.classList.add('hidden');
+  }
+}
+
+// ── State toggle handler ───────────────────────────────────────────────────
+document.getElementById('state-toggle').addEventListener('click', function(e) {
+  const btn = e.target.closest('button[data-state]');
+  if (!btn) return;
+  const state = btn.dataset.state;
+  if (state === currentState) return;
+
+  currentState = state;
+
+  // Update active button
+  this.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // Rebuild game dropdown
+  updateGameDropdown(state);
+});
+
+// ── Game dropdown change handler ───────────────────────────────────────────
+document.getElementById('lottery-type').addEventListener('change', updatePlayTypeVisibility);
+
+// ── Play type card highlight sync ─────────────────────────────────────────
+document.getElementById('play-type-grid').addEventListener('change', function(e) {
+  if (e.target.name === 'play-type') {
+    document.querySelectorAll('.play-type-card').forEach(card => card.classList.remove('selected'));
+    e.target.closest('.play-type-card').classList.add('selected');
+  }
+});
 
 // ── Session state ─────────────────────────────────────────────────────────
 let genCount = 0;
@@ -562,6 +862,11 @@ document.getElementById('btn-generate').addEventListener('click', function() {
   const favorites = document.getElementById('favorites').value;
   const lotteryKey = document.getElementById('lottery-type').value;
   const lottery = LOTTERIES[lotteryKey];
+
+  // Determine if smart recommendation should show
+  const isPickGame = (lotteryKey === 'pick3' || lotteryKey === 'pick4');
+  const isStateGame = (currentState === 'nc' || currentState === 'sc');
+  const showRec = isPickGame && isStateGame;
 
   // Random salt so each click gives fresh picks
   const salt = Math.floor(Math.random() * 1e9);
@@ -576,11 +881,10 @@ document.getElementById('btn-generate').addEventListener('click', function() {
   document.getElementById('gen-count').textContent = `Generation #${genCount}`;
 
   for (let i = 1; i <= 3; i++) {
-    // Each set uses a slightly different seed derivation
     const setSeed = buildSeed(name, dates, favorites, salt + i * 777);
     const setRng = mulberry32(setSeed);
     const data = lottery.generate(setRng);
-    const block = renderResult(data, `${lottery.label} — Set ${i}`);
+    const block = renderResult(data, `${lottery.label} — Set ${i}`, showRec);
     results.appendChild(block);
   }
 });
