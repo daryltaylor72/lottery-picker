@@ -478,6 +478,65 @@
       letter-spacing: 0.05em;
     }
 
+    /* ── Numerology Panel ── */
+    .numerology-panel {
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #FBF3DE 0%, #F5EAC8 100%);
+      border: 1px solid var(--gold-light);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      animation: fadeIn 0.3s ease both;
+    }
+
+    .numerology-panel .num-header {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #8C6B1A;
+      margin-bottom: 12px;
+    }
+
+    .num-numbers {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .num-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .num-badge .num-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .num-badge .num-label {
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #8C6B1A;
+      opacity: 0.8;
+    }
+
+    .num-influence {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: #6B4F10;
+      line-height: 1.5;
+    }
+
     /* Hidden utility */
     .hidden { display: none !important; }
   </style>
@@ -582,6 +641,25 @@
     <span class="star-burst">★</span> Generate My Numbers
   </button>
   <div class="gen-count" id="gen-count"></div>
+</div>
+
+<div class="numerology-panel hidden" id="numerology-panel">
+  <div class="num-header">✦ Your Numerology Profile</div>
+  <div class="num-numbers">
+    <div class="num-badge">
+      <span class="num-value" id="num-lifepath">—</span>
+      <span class="num-label">Life Path</span>
+    </div>
+    <div class="num-badge">
+      <span class="num-value" id="num-expression">—</span>
+      <span class="num-label">Expression</span>
+    </div>
+    <div class="num-badge">
+      <span class="num-value" id="num-destiny">—</span>
+      <span class="num-label">Destiny</span>
+    </div>
+  </div>
+  <div class="num-influence" id="num-influence"></div>
 </div>
 
 <div class="results" id="results">
@@ -865,6 +943,125 @@ document.getElementById('play-type-grid').addEventListener('change', function(e)
   }
 });
 
+// ── Numerology Engine ─────────────────────────────────────────────────────
+
+// Reduce a number to a single digit (preserve 11, 22, 33 as master numbers)
+function reduceNum(n) {
+  while (n > 9 && n !== 11 && n !== 22 && n !== 33) {
+    n = String(n).split('').reduce((s, d) => s + parseInt(d), 0);
+  }
+  return n;
+}
+
+// Life Path: sum all digits of YYYY-MM-DD
+function calcLifePath(dateStr) {
+  if (!dateStr) return null;
+  const digits = dateStr.replace(/-/g, '').split('').map(Number);
+  return reduceNum(digits.reduce((a, b) => a + b, 0));
+}
+
+// Expression (name) number: A=1..I=9, J=1..R=9, S=1..Z=8
+const LETTER_MAP = 'abcdefghijklmnopqrstuvwxyz';
+const LETTER_VAL = [1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,8,9,1,2,3,4,5,6,7,8];
+function calcExpression(name) {
+  if (!name.trim()) return null;
+  const sum = name.toLowerCase().split('').reduce((acc, c) => {
+    const idx = LETTER_MAP.indexOf(c);
+    return idx >= 0 ? acc + LETTER_VAL[idx] : acc;
+  }, 0);
+  return reduceNum(sum);
+}
+
+// Destiny = Life Path + Expression, reduced
+function calcDestiny(lp, ex) {
+  if (!lp || !ex) return null;
+  return reduceNum(lp + ex);
+}
+
+// Build a set of "influence numbers" (core + multiples) within a range
+function getInfluenceNumbers(coreNums, min, max) {
+  const influenced = new Set();
+  coreNums.forEach(core => {
+    if (!core) return;
+    const base = core > 9 ? core % 9 || 9 : core;
+    for (let n = min; n <= max; n++) {
+      const r = n > 9 ? String(n).split('').reduce((s,d)=>s+parseInt(d),0) : n;
+      if (r === base || n === core) influenced.add(n);
+    }
+  });
+  return influenced;
+}
+
+// Weighted pick: numbers in influenced set have 3x weight
+function weightedPickUnique(rng, count, min, max, influenced) {
+  const pool = [];
+  for (let i = min; i <= max; i++) {
+    const w = influenced.has(i) ? 3 : 1;
+    for (let j = 0; j < w; j++) pool.push(i);
+  }
+  // Fisher-Yates on weighted pool, pick unique
+  const seen = new Set();
+  const result = [];
+  for (let i = pool.length - 1; i > 0 && result.length < count; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+    if (!seen.has(pool[i])) {
+      seen.add(pool[i]);
+      result.push(pool[i]);
+    }
+  }
+  // Fallback if we didn't get enough
+  if (result.length < count) {
+    for (let n = min; n <= max && result.length < count; n++) {
+      if (!seen.has(n)) result.push(n);
+    }
+  }
+  return result.sort((a, b) => a - b);
+}
+
+// Weighted digit pick (with replacement, for Pick 3/4)
+function weightedDigits(rng, count, influenced) {
+  const pool = [];
+  for (let d = 0; d <= 9; d++) {
+    const w = influenced.has(d) ? 3 : 1;
+    for (let j = 0; j < w; j++) pool.push(d);
+  }
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(pool[Math.floor(rng() * pool.length)]);
+  }
+  return result;
+}
+
+// Current numerology state
+let currentNumerology = { lifePath: null, expression: null, destiny: null };
+
+function updateNumerologyPanel() {
+  const name = document.getElementById('name').value;
+  const dateInputs = document.querySelectorAll('.date-input');
+  const dates = [...dateInputs].map(i => i.value).filter(Boolean);
+
+  const lp = dates.length > 0 ? calcLifePath(dates[0]) : null;
+  const ex = name.trim() ? calcExpression(name) : null;
+  const dest = calcDestiny(lp, ex);
+
+  currentNumerology = { lifePath: lp, expression: ex, destiny: dest };
+
+  const panel = document.getElementById('numerology-panel');
+  if (!lp && !ex) { panel.classList.add('hidden'); return; }
+
+  panel.classList.remove('hidden');
+  document.getElementById('num-lifepath').textContent = lp || '—';
+  document.getElementById('num-expression').textContent = ex || '—';
+  document.getElementById('num-destiny').textContent = dest || '—';
+
+  const coreNums = [lp, ex, dest].filter(Boolean);
+  const influenced = getInfluenceNumbers(coreNums, 1, 70);
+  const topNums = [...influenced].slice(0, 8).join(', ');
+  document.getElementById('num-influence').textContent =
+    `Your picks are weighted toward: ${topNums}${influenced.size > 8 ? '…' : ''}`;
+}
+
 // ── Session state ─────────────────────────────────────────────────────────
 let genCount = 0;
 
@@ -884,6 +1081,10 @@ function refreshGlobalCount() {
 // Load count on page init
 refreshGlobalCount();
 
+// ── Live numerology updates ───────────────────────────────────────────────
+document.getElementById('name').addEventListener('input', updateNumerologyPanel);
+document.getElementById('dates-list').addEventListener('change', updateNumerologyPanel);
+
 // ── Main generate ─────────────────────────────────────────────────────────
 document.getElementById('btn-generate').addEventListener('click', function() {
   const name = document.getElementById('name').value;
@@ -898,10 +1099,10 @@ document.getElementById('btn-generate').addEventListener('click', function() {
   const isStateGame = (currentState === 'nc' || currentState === 'sc');
   const showRec = isPickGame && isStateGame;
 
-  // Random salt so each click gives fresh picks
-  const salt = Math.floor(Math.random() * 1e9);
-  const seed = buildSeed(name, dates, favorites, salt);
-  const rng = mulberry32(seed);
+  // Build numerology influence set
+  const { lifePath, expression, destiny } = currentNumerology;
+  const coreNums = [lifePath, expression, destiny].filter(Boolean);
+  const hasNumerology = coreNums.length > 0;
 
   // Generate 3 sets
   const results = document.getElementById('results');
@@ -919,13 +1120,66 @@ document.getElementById('btn-generate').addEventListener('click', function() {
   }).then(() => refreshGlobalCount()).catch(() => {});
 
   for (let i = 1; i <= 3; i++) {
+    const salt = Math.floor(Math.random() * 1e9);
     const setSeed = buildSeed(name, dates, favorites, salt + i * 777);
     const setRng = mulberry32(setSeed);
-    const data = lottery.generate(setRng);
-    const block = renderResult(data, `${lottery.label} — Set ${i}`, showRec);
+
+    let data;
+    if (hasNumerology) {
+      // Use numerology-weighted generation
+      data = generateWithNumerology(setRng, lotteryKey, coreNums);
+    } else {
+      data = lottery.generate(setRng);
+    }
+
+    const label = hasNumerology
+      ? `${lottery.label} — Set ${i} ✦`
+      : `${lottery.label} — Set ${i}`;
+    const block = renderResult(data, label, showRec);
     results.appendChild(block);
   }
 });
+
+// ── Numerology-weighted generation ────────────────────────────────────────
+function generateWithNumerology(rng, lotteryKey, coreNums) {
+  switch (lotteryKey) {
+    case 'powerball': {
+      const inf = getInfluenceNumbers(coreNums, 1, 69);
+      const whites = weightedPickUnique(rng, 5, 1, 69, inf);
+      const infBonus = getInfluenceNumbers(coreNums, 1, 26);
+      const bonus = weightedPickUnique(rng, 1, 1, 26, infBonus);
+      return { whites, bonus, type: 'powerball' };
+    }
+    case 'megamillions': {
+      const inf = getInfluenceNumbers(coreNums, 1, 70);
+      const whites = weightedPickUnique(rng, 5, 1, 70, inf);
+      const infBonus = getInfluenceNumbers(coreNums, 1, 25);
+      const bonus = weightedPickUnique(rng, 1, 1, 25, infBonus);
+      return { whites, bonus, type: 'megamillions' };
+    }
+    case 'pick3': {
+      const infD = getInfluenceNumbers(coreNums, 0, 9);
+      return { digits: weightedDigits(rng, 3, infD), type: 'pick3' };
+    }
+    case 'pick4': {
+      const infD = getInfluenceNumbers(coreNums, 0, 9);
+      return { digits: weightedDigits(rng, 4, infD), type: 'pick4' };
+    }
+    case 'pick5':
+    case 'nc_cash5': {
+      const max = lotteryKey === 'nc_cash5' ? 43 : 39;
+      const inf = getInfluenceNumbers(coreNums, 1, max);
+      return { whites: weightedPickUnique(rng, 5, 1, max, inf), type: lotteryKey };
+    }
+    case 'sc_palmetto5': {
+      const inf = getInfluenceNumbers(coreNums, 1, 38);
+      return { whites: weightedPickUnique(rng, 5, 1, 38, inf), type: 'pick5' };
+    }
+    default: {
+      return LOTTERIES[lotteryKey]?.generate(rng) || { whites: [], type: lotteryKey };
+    }
+  }
+}
 
 // ── Add/remove date rows ──────────────────────────────────────────────────
 document.getElementById('btn-add-date').addEventListener('click', function() {
