@@ -449,10 +449,8 @@
       letter-spacing: 0.06em;
       margin-top: 32px;
       margin-bottom: 0;
-      opacity: 0;
-      transition: opacity 0.4s ease;
+      opacity: 1;
     }
-    .session-counter.visible { opacity: 1; }
 
     /* ── Empty state ── */
     .empty-state {
@@ -593,7 +591,7 @@
   </div>
 </div>
 
-<div class="session-counter" id="session-counter"></div>
+<div class="session-counter" id="session-counter">★ Numbers generated: —</div>
 
 <footer>Your numbers are yours — play responsibly.</footer>
 
@@ -870,6 +868,22 @@ document.getElementById('play-type-grid').addEventListener('change', function(e)
 // ── Session state ─────────────────────────────────────────────────────────
 let genCount = 0;
 
+// ── Global counter ────────────────────────────────────────────────────────
+const WORKER = 'https://lottery-analytics.wb6yppthkw.workers.dev';
+
+function refreshGlobalCount() {
+  fetch(`${WORKER}/count`)
+    .then(r => r.json())
+    .then(({ total }) => {
+      const el = document.getElementById('session-counter');
+      el.textContent = `★ Numbers generated: ${total.toLocaleString()}`;
+    })
+    .catch(() => {});
+}
+
+// Load count on page init
+refreshGlobalCount();
+
 // ── Main generate ─────────────────────────────────────────────────────────
 document.getElementById('btn-generate').addEventListener('click', function() {
   const name = document.getElementById('name').value;
@@ -896,18 +910,13 @@ document.getElementById('btn-generate').addEventListener('click', function() {
   genCount++;
   document.getElementById('gen-count').textContent = `Generation #${genCount}`;
 
-  // Update session counter
-  const counterEl = document.getElementById('session-counter');
-  counterEl.textContent = `★ You've generated ${genCount} set${genCount === 1 ? '' : 's'} this session`;
-  counterEl.classList.add('visible');
-
-  // Track analytics (silent fail)
+  // Track analytics and update global counter
   const selectedPlayType = (document.querySelector('input[name="play-type"]:checked') || {}).value || null;
   fetch('https://lottery-analytics.wb6yppthkw.workers.dev/track', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ game: lotteryKey, state: currentState, playType: selectedPlayType })
-  }).catch(() => {});
+  }).then(() => refreshGlobalCount()).catch(() => {});
 
   for (let i = 1; i <= 3; i++) {
     const setSeed = buildSeed(name, dates, favorites, salt + i * 777);
