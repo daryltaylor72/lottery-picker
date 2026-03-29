@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Lucky Numbers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --gold-pale: #FBF3DE;
+      --ink: #1A1A1A;
+      --ink-soft: #5A5A5A;
+      --cream: #FDFAF4;
+      --border: #E8E0CC;
+      --ball-r: 52px;
+      --radius: 12px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .logo-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .logo-star {
+      font-size: 22px;
+      color: var(--gold);
+      animation: spin 12s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 8vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      font-weight: 300;
+      color: var(--ink-soft);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+    }
+
+    /* ── Form ── */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.97rem;
+      font-weight: 400;
+      color: var(--ink);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+    }
+
+    /* Custom select arrow */
+    .select-wrap {
+      position: relative;
+    }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+
+    /* Multi-date section */
+    .dates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .date-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .date-row input {
+      flex: 1;
+    }
+
+    .btn-remove {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--ink-soft);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+      padding: 0;
+      line-height: 1;
+    }
+    .btn-remove:hover { background: #fee; color: #c00; border-color: #fcc; }
+
+    .btn-add-date {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gold);
+      background: none;
+      border: 1px dashed var(--gold-light);
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 6px;
+      transition: background 0.15s;
+    }
+    .btn-add-date:hover { background: var(--gold-pale); }
+
+    /* ── Generate Button ── */
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-generate:active { transform: scale(0.98); }
+    .btn-generate:hover { background: #333; }
+
+    .btn-generate .star-burst {
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.3s;
+    }
+    .btn-generate:hover .star-burst { transform: rotate(90deg) scale(1.2); }
+
+    /* ── Results ── */
+    .results {
+      width: 100%;
+      max-width: 440px;
+      margin-top: 24px;
+    }
+
+    .result-block {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+      animation: slideUp 0.35s ease both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-block:nth-child(2) { animation-delay: 0.05s; }
+    .result-block:nth-child(3) { animation-delay: 0.1s; }
+
+    .result-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 16px;
+    }
+
+    .balls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ball {
+      width: var(--ball-r);
+      height: var(--ball-r);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.2);
+      animation: ballPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+      flex-shrink: 0;
+    }
+
+    @keyframes ballPop {
+      from { transform: scale(0) rotate(-20deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* Ball color themes per lottery */
+    .ball.white  { background: linear-gradient(135deg, #4A90D9 0%, #2C5F9E 100%); }
+    .ball.power  { background: linear-gradient(135deg, #E84545 0%, #B01F1F 100%); }
+    .ball.mega   { background: linear-gradient(135deg, #F5A623 0%, #C07000 100%); }
+    .ball.pick3  { background: linear-gradient(135deg, #5CB85C 0%, #2E7B2E 100%); }
+    .ball.pick4  { background: linear-gradient(135deg, #9B59B6 0%, #6C2A8A 100%); }
+    .ball.pick5  { background: linear-gradient(135deg, #E67E22 0%, #A04B00 100%); }
+    .ball.gold   { background: linear-gradient(135deg, #C9A84C 0%, #8C6B1A 100%); }
+
+    /* Ball stagger */
+    .ball:nth-child(1) { animation-delay: 0.00s; }
+    .ball:nth-child(2) { animation-delay: 0.06s; }
+    .ball:nth-child(3) { animation-delay: 0.12s; }
+    .ball:nth-child(4) { animation-delay: 0.18s; }
+    .ball:nth-child(5) { animation-delay: 0.24s; }
+    .ball:nth-child(6) { animation-delay: 0.30s; }
+
+    .separator {
+      font-size: 1.5rem;
+      color: var(--border);
+      align-self: center;
+      margin: 0 2px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 48px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      letter-spacing: 0.04em;
+      opacity: 0.6;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      font-weight: 300;
+    }
+    .empty-icon { font-size: 2.4rem; margin-bottom: 12px; }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    /* ── Generate count ── */
+    .gen-count {
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      text-align: center;
+      margin-top: 12px;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-line">
+    <span class="logo-star">✦</span>
+    <h1>Lucky Numbers</h1>
+    <span class="logo-star">✦</span>
+  </div>
+  <p class="subtitle">Personalized lottery picks</p>
+</header>
+
+<div class="card">
+  <div class="form-group">
+    <label>Your Name</label>
+    <input type="text" id="name" placeholder="First name or nickname" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label>Birth Dates <span style="font-size:0.65rem;opacity:0.7">(add up to 5)</span></label>
+    <div class="dates-list" id="dates-list">
+      <div class="date-row">
+        <input type="date" class="date-input">
+      </div>
+    </div>
+    <button class="btn-add-date" id="btn-add-date">+ Add another date</button>
+  </div>
+
+  <div class="form-group">
+    <label>Favorite Numbers <span style="font-size:0.65rem;opacity:0.7">(comma separated)</span></label>
+    <input type="text" id="favorites" placeholder="e.g. 7, 13, 42" autocomplete="off">
+  </div>
+
+  <div class="form-group">
+    <label>Lottery Game</label>
+    <div class="select-wrap">
+      <select id="lottery-type">
+        <option value="powerball">Powerball (5 of 1–69 + 1 of 1–26)</option>
+        <option value="megamillions">Mega Millions (5 of 1–70 + 1 of 1–25)</option>
+        <option value="pick3">Pick 3 (3 digits 0–9)</option>
+        <option value="pick4">Pick 4 (4 digits 0–9)</option>
+        <option value="pick5">Pick 5 (5 of 1–39)</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="btn-generate">
+    <span class="star-burst">★</span> Generate My Numbers
+  </button>
+  <div class="gen-count" id="gen-count"></div>
+</div>
+
+<div class="results" id="results">
+  <div class="empty-state">
+    <div class="empty-icon">🎱</div>
+    Fill in your details and tap Generate
+  </div>
+</div>
+
+<footer>Your numbers are yours — play responsibly.</footer>
+
+<script>
+// ── PRNG (seeded Mulberry32) ──────────────────────────────────────────────
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ── Hash string → 32-bit integer ─────────────────────────────────────────
+function hashStr(s) {
+  let h = 0x811C9DC5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+// ── Build seed from user inputs ───────────────────────────────────────────
+function buildSeed(name, dates, favorites, salt) {
+  const raw = [
+    name.toLowerCase().trim(),
+    dates.join('|'),
+    favorites.replace(/\s/g, ''),
+    String(salt)
+  ].join('::');
+  return hashStr(raw);
+}
+
+// ── Pick unique numbers in range [min, max] (inclusive) ──────────────────
+function pickUnique(rng, count, min, max) {
+  const pool = [];
+  for (let i = min; i <= max; i++) pool.push(i);
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count).sort((a, b) => a - b);
+}
+
+// ── Pick digit (0–9) with replacement ────────────────────────────────────
+function pickDigits(rng, count) {
+  const digits = [];
+  for (let i = 0; i < count; i++) digits.push(Math.floor(rng() * 10));
+  return digits;
+}
+
+// ── Lottery rules ─────────────────────────────────────────────────────────
+const LOTTERIES = {
+  powerball: {
+    label: 'Powerball',
+    generate(rng) {
+      const whites = pickUnique(rng, 5, 1, 69);
+      const power  = pickUnique(rng, 1, 1, 26);
+      return { whites, bonus: power, type: 'powerball' };
+    }
+  },
+  megamillions: {
+    label: 'Mega Millions',
+    generate(rng) {
+      const whites = pickUnique(rng, 5, 1, 70);
+      const mega   = pickUnique(rng, 1, 1, 25);
+      return { whites, bonus: mega, type: 'megamillions' };
+    }
+  },
+  pick3: {
+    label: 'Pick 3',
+    generate(rng) {
+      return { digits: pickDigits(rng, 3), type: 'pick3' };
+    }
+  },
+  pick4: {
+    label: 'Pick 4',
+    generate(rng) {
+      return { digits: pickDigits(rng, 4), type: 'pick4' };
+    }
+  },
+  pick5: {
+    label: 'Pick 5',
+    generate(rng) {
+      const nums = pickUnique(rng, 5, 1, 39);
+      return { whites: nums, type: 'pick5' };
+    }
+  }
+};
+
+// ── Render a result block ─────────────────────────────────────────────────
+function renderResult(data, label) {
+  const block = document.createElement('div');
+  block.className = 'result-block';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'result-label';
+  lbl.textContent = label;
+  block.appendChild(lbl);
+
+  const row = document.createElement('div');
+  row.className = 'balls-row';
+
+  if (data.digits) {
+    // Pick 3 / Pick 4
+    const colorMap = { pick3: 'pick3', pick4: 'pick4' };
+    const cls = colorMap[data.type] || 'pick3';
+    data.digits.forEach((d, i) => {
+      const ball = document.createElement('div');
+      ball.className = `ball ${cls}`;
+      ball.style.animationDelay = `${i * 0.07}s`;
+      ball.textContent = d;
+      row.appendChild(ball);
+    });
+  } else {
+    // Powerball / Mega Millions / Pick 5
+    const whiteCls = data.type === 'pick5' ? 'pick5' : 'white';
+    data.whites.forEach((n, i) => {
+      const ball = document.createElement('div');
+      ball.className = `ball ${whiteCls}`;
+      ball.style.animationDelay = `${i * 0.07}s`;
+      ball.textContent = n;
+      row.appendChild(ball);
+    });
+
+    if (data.bonus) {
+      const sep = document.createElement('span');
+      sep.className = 'separator';
+      sep.textContent = '+';
+      row.appendChild(sep);
+
+      const bonus = document.createElement('div');
+      const bonusCls = data.type === 'megamillions' ? 'mega' : 'power';
+      bonus.className = `ball ${bonusCls}`;
+      bonus.style.animationDelay = `${data.whites.length * 0.07 + 0.07}s`;
+      bonus.textContent = data.bonus[0];
+      row.appendChild(bonus);
+    }
+  }
+
+  block.appendChild(row);
+  return block;
+}
+
+// ── Session state ─────────────────────────────────────────────────────────
+let genCount = 0;
+
+// ── Main generate ─────────────────────────────────────────────────────────
+document.getElementById('btn-generate').addEventListener('click', function() {
+  const name = document.getElementById('name').value;
+  const dateInputs = document.querySelectorAll('.date-input');
+  const dates = [...dateInputs].map(i => i.value).filter(Boolean);
+  const favorites = document.getElementById('favorites').value;
+  const lotteryKey = document.getElementById('lottery-type').value;
+  const lottery = LOTTERIES[lotteryKey];
+
+  // Random salt so each click gives fresh picks
+  const salt = Math.floor(Math.random() * 1e9);
+  const seed = buildSeed(name, dates, favorites, salt);
+  const rng = mulberry32(seed);
+
+  // Generate 3 sets
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+
+  genCount++;
+  document.getElementById('gen-count').textContent = `Generation #${genCount}`;
+
+  for (let i = 1; i <= 3; i++) {
+    // Each set uses a slightly different seed derivation
+    const setSeed = buildSeed(name, dates, favorites, salt + i * 777);
+    const setRng = mulberry32(setSeed);
+    const data = lottery.generate(setRng);
+    const block = renderResult(data, `${lottery.label} — Set ${i}`);
+    results.appendChild(block);
+  }
+});
+
+// ── Add/remove date rows ──────────────────────────────────────────────────
+document.getElementById('btn-add-date').addEventListener('click', function() {
+  const list = document.getElementById('dates-list');
+  if (list.children.length >= 5) return;
+
+  const row = document.createElement('div');
+  row.className = 'date-row';
+
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.className = 'date-input';
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-remove';
+  btn.innerHTML = '×';
+  btn.addEventListener('click', () => row.remove());
+
+  row.appendChild(input);
+  row.appendChild(btn);
+  list.appendChild(row);
+
+  if (list.children.length >= 5) {
+    document.getElementById('btn-add-date').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
